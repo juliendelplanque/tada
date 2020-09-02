@@ -115,7 +115,8 @@ class Task(object):
     
     @property
     def project_tags_iter(self):
-        return map(ProjectTag.from_match, re.finditer(project_tag_re, self.description))
+        return map(ProjectTag.from_match,
+            re.finditer(project_tag_re, self.description))
     
     @property
     def project_tags(self):
@@ -123,7 +124,8 @@ class Task(object):
     
     @property
     def context_tags_iter(self):
-        return map(ContextTag.from_match, re.finditer(context_tag_re, self.description))
+        return map(ContextTag.from_match,
+            re.finditer(context_tag_re, self.description))
 
     @property
     def context_tags(self):
@@ -131,7 +133,8 @@ class Task(object):
     
     @property
     def keyvalue_tags_iter(self):
-        return map(KeyValueTag.from_match, re.finditer(keyvalue_tag_re, self.description))
+        return map(KeyValueTag.from_match,
+            re.finditer(keyvalue_tag_re, self.description))
 
     @property
     def keyvalue_tags(self):
