@@ -149,3 +149,32 @@ def test_value_for_not_found_key():
     with pytest.raises(KeyError):
         task.value_for_key("due")
 
+def test_empty_task():
+    task = tada.Task()
+
+    assert not task.is_completed
+    assert not task.has_priority()
+    assert task.priority is None
+    assert not task.has_completion_date()
+    assert task.completion_date is None
+    assert not task.has_creation_date()
+    assert task.creation_date is None
+    assert not task.project_tags
+    assert not task.context_tags
+    assert not task.keyvalue_tags
+    assert task.description == ""
+
+def test_change_task_completion():
+    task = tada.Task("Cool task.")
+
+    assert not task.is_completed
+
+    task.is_completed = True
+
+    assert task.is_completed
+    assert task.content == "x Cool task."
+
+    task.is_completed = False
+
+    assert not task.is_completed
+    assert task.content == "Cool task."

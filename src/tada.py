@@ -43,7 +43,7 @@ date_re = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
 completion_date_re = r"(?P<completion_date>"+date_re+r"\s)"
 creation_date_re = r"(?P<creation_date>"+date_re+r"\s)"
 dates_re = r"("+completion_date_re+r"?"+creation_date_re+r")?"
-content_re = r"(?P<description>.+)"
+content_re = r"(?P<description>.*)"
 task_regex = r"^"+completion_re+priority_re+dates_re+content_re+r"$"
 project_tag_re = r"\s\+(\S+)"
 context_tag_re = r"\s@(\S+)"
@@ -53,66 +53,60 @@ def split_date_string(date_string):
     return [ int(x) for x in date_string.split("-") ]
 
 class Task(object):
-    def __init__(self, content_string):
-        self.content = content_string
-    
-    @property
-    def regex_match(self):
-        return re.match(task_regex, self.content)
+    def __init__(self, content_string=""):
+        self.regex_match = re.match(task_regex, content_string)
+        self.is_completed = self.extract_is_completed()
+        self.priority = self.extract_priority()
+        self.completion_date = self.extract_completion_date()
+        self.creation_date = self.extract_creation_date()
+        self.description = self.extract_description()
     
     def regex_group(self, group_name):
         return self.regex_match.group(group_name)
     
-    @property
-    def is_completed(self):
+    def extract_is_completed(self):
         return self.regex_group("completion") is not None
     
-    def __raw_priority(self):
-        return self.regex_group("priority")
-    
     def has_priority(self):
-        return self.__raw_priority() is not None
+        return self.priority is not None
 
-    @property
-    def priority(self):
-        raw_priority = self.__raw_priority()
+    def extract_priority(self):
+        raw_priority = self.regex_group("priority")
         if raw_priority is None:
             return None
         return raw_priority[1:2]
-    
-    def __raw_completion_date(self):
-        return self.regex_group("completion_date")
 
     def has_completion_date(self):
-        return self.__raw_completion_date() is not None
+        return self.completion_date is not None
 
-    @property
-    def completion_date(self):
-        raw_date = self.__raw_completion_date()
+    def extract_completion_date(self):
+        raw_date = self.regex_group("completion_date")
         if raw_date == None:
             return None
         return datetime.date(*split_date_string(raw_date))
-    
-    def __raw_creation_date(self):
-        return self.regex_group("creation_date")
     
     def has_creation_date(self):
-        return self.__raw_creation_date() is not None
+        return self.creation_date is not None
 
-    @property
-    def creation_date(self):
-        raw_date = self.__raw_creation_date()
+    def extract_creation_date(self):
+        raw_date = self.regex_group("creation_date")
         if raw_date == None:
             return None
         return datetime.date(*split_date_string(raw_date))
     
-    def __raw_description(self):
+    def extract_description(self):
         return self.regex_group("description")
-
-    @property
-    def description(self):
-        return self.__raw_description()
     
+    @property
+    def content(self):
+        return "%s%s%s%s%s" % (
+            "x " if self.is_completed else "",
+            ("%s " % self.priority) if self.has_priority() else "",
+            ("%s " % str(self.completion_date)) if self.has_completion_date() else "",
+            ("%s " % str(self.creation_date)) if self.has_creation_date() else "",
+            self.description
+        )
+
     @property
     def project_tags_iter(self):
         return map(ProjectTag.from_match,
