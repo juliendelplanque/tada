@@ -43,7 +43,7 @@ date_re = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
 completion_date_re = r"(?P<completion_date>"+date_re+r"\s)"
 creation_date_re = r"(?P<creation_date>"+date_re+r"\s)"
 dates_re = r"("+completion_date_re+r"?"+creation_date_re+r")?"
-content_re = r"(?P<description>.*)"
+content_re = r"(?P<description>[^\n]*)"
 task_regex = r"^"+completion_re+priority_re+dates_re+content_re+r"$"
 project_tag_re = r"\s\+(\S+)"
 context_tag_re = r"\s@(\S+)"
@@ -52,50 +52,47 @@ keyvalue_tag_re = r"\s(\S+):(\S+)"
 def split_date_string(date_string):
     return [ int(x) for x in date_string.split("-") ]
 
+def extract_is_completed(regex_match):
+    return regex_match.group("completion") is not None
+
+def extract_priority(regex_match):
+    raw_priority = regex_match.group("priority")
+    if raw_priority is None:
+        return None
+    return raw_priority[1:2]
+
+def extract_completion_date(regex_match):
+    raw_date = regex_match.group("completion_date")
+    if raw_date == None:
+        return None
+    return datetime.date(*split_date_string(raw_date))
+
+def extract_creation_date(regex_match):
+    raw_date = regex_match.group("creation_date")
+    if raw_date == None:
+        return None
+    return datetime.date(*split_date_string(raw_date))
+
+def extract_description(regex_match):
+    return regex_match.group("description")
+
 class Task(object):
     def __init__(self, content_string=""):
-        self.regex_match = re.match(task_regex, content_string)
-        self.is_completed = self.extract_is_completed()
-        self.priority = self.extract_priority()
-        self.completion_date = self.extract_completion_date()
-        self.creation_date = self.extract_creation_date()
-        self.description = self.extract_description()
-    
-    def regex_group(self, group_name):
-        return self.regex_match.group(group_name)
-    
-    def extract_is_completed(self):
-        return self.regex_group("completion") is not None
+        regex_match = re.match(task_regex, content_string)
+        self.is_completed = extract_is_completed(regex_match)
+        self.priority = extract_priority(regex_match)
+        self.completion_date = extract_completion_date(regex_match)
+        self.creation_date = extract_creation_date(regex_match)
+        self.description = extract_description(regex_match)
     
     def has_priority(self):
         return self.priority is not None
 
-    def extract_priority(self):
-        raw_priority = self.regex_group("priority")
-        if raw_priority is None:
-            return None
-        return raw_priority[1:2]
-
     def has_completion_date(self):
         return self.completion_date is not None
-
-    def extract_completion_date(self):
-        raw_date = self.regex_group("completion_date")
-        if raw_date == None:
-            return None
-        return datetime.date(*split_date_string(raw_date))
     
     def has_creation_date(self):
         return self.creation_date is not None
-
-    def extract_creation_date(self):
-        raw_date = self.regex_group("creation_date")
-        if raw_date == None:
-            return None
-        return datetime.date(*split_date_string(raw_date))
-    
-    def extract_description(self):
-        return self.regex_group("description")
     
     @property
     def content(self):
