@@ -113,6 +113,9 @@ class Task(object):
     def project_tags(self):
         return list(map(lambda t: t.name, self.project_tags_iter))
     
+    def has_project_tag(self, tag):
+        return tag in self.project_tags
+    
     @property
     def context_tags_iter(self):
         return map(ContextTag.from_match,
@@ -122,6 +125,9 @@ class Task(object):
     def context_tags(self):
         return list(map(lambda t: t.name, self.context_tags_iter))
     
+    def has_context_tag(self, tag):
+        return tag in self.context_tags
+    
     @property
     def keyvalue_tags_iter(self):
         return map(KeyValueTag.from_match,
@@ -130,6 +136,9 @@ class Task(object):
     @property
     def keyvalue_tags(self):
         return list(map(lambda t: t.key, self.keyvalue_tags_iter))
+    
+    def has_keyvalue_tag(self, tag):
+        return tag in self.keyvalue_tags
 
     def value_for_key(self, key):
         try:
@@ -143,6 +152,12 @@ class Task(object):
     
     def format(self, format_string):
         return format_string.format(task=self)
+    
+    def __str__(self):
+        return self.content
+    
+    def __repr__(self):
+        return "Task(\"%s\")" % self.content
 
 class TodoList(object):
     def __init__(self, stream):
@@ -153,3 +168,30 @@ class TodoList(object):
         self.stream.seek(0, 0)
         for line in self.stream:
             yield Task(line)
+    
+    def __getitem__(self, key):
+        i = 0
+        for task in self:
+            if i == key:
+                return task
+            else:
+                i += 1
+        raise KeyError("No task with index %d" % key)
+    
+    def tasks_with_project_tag_iter(self, tag):
+        return filter(lambda task: task.has_project_tag(tag), self)
+    
+    def tasks_with_project_tag(self, tag):
+        return list(self.tasks_with_project_tag_iter(tag))
+    
+    def tasks_with_context_tag_iter(self, tag):
+        return filter(lambda task: task.has_context_tag(tag), self)
+    
+    def tasks_with_context_tag(self, tag):
+        return list(self.tasks_with_context_tag_iter(tag))
+    
+    def tasks_with_keyvalue_tag_iter(self, tag):
+        return filter(lambda task: task.has_keyvalue_tag(tag), self)
+    
+    def tasks_with_keyvalue_tag(self, tag):
+        return list(self.tasks_with_keyvalue_tag_iter(tag))
